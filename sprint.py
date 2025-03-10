@@ -41,7 +41,7 @@ def linetrack(junction_type, start, stretch):
             break
         difference = left_reflection - right_reflection
         if slow:
-            #original:200
+            # original:200
             db.drive(200, difference * 0.6)
         else:
             db.drive(469, difference * 0.4)
@@ -57,4 +57,3 @@ linetrack("both", 5, 5)
 db.turn(-45)
 linetrack("both", 100, 100)
 db.turn(180)
-
