@@ -10,8 +10,8 @@ from pybricks.robotics import DriveBase
 from pybricks.tools import wait
 
 # Line tracking constants
-WHITE = 100
-BLACK = 0
+WHITES = (71, 66, 62, 65)
+BLACK = 8
 SPEED = 700
 SENSOR_POSITIONS = (-3, -1, 1, 3)
 K_P = 0
@@ -34,9 +34,26 @@ db = DriveBase(left_motor, right_motor, 88, 160)
 db.settings(straight_speed=SPEED, straight_acceleration=69420, turn_acceleration=69420, turn_rate=69420)
 
 
-def reflection_to_line(reflection: int) -> float:
+def process_reflections(reflections: tuple[int, int, int, int]) -> tuple[float, float, float, float]:
     """Convert reflection to line amount."""
-    return 1 - (reflection - BLACK) / (WHITE - BLACK)
+    out = []
+    for white, ref in zip(WHITES, reflections):
+        line_amount = 1 - (ref - BLACK) / (white - BLACK)
+        line_amount = max(min(line_amount, 1), 0)
+        line_amount = curve(line_amount)
+        out.append(line_amount)
+    return tuple(out)
+
+
+def curve(x: float) -> float:
+    if x < 0.3:
+        return (2 / 3) * x
+    elif x < 0.4:
+        return 3 * x - 0.7
+    elif x < 0.7:
+        return (2 / 3) * x + (7 / 30)
+    else:
+        return x
 
 
 def linetrack(min_distance: int, *, direction: str = "both", junctions: int = 1) -> None:
@@ -54,7 +71,7 @@ def linetrack(min_distance: int, *, direction: str = "both", junctions: int = 1)
     hub.display.pixel(0, 1, 0)
 
     while True:
-        line_amounts = (reflection_to_line(sensor.reflection()) for sensor in color_sensors)
+        line_amounts = process_reflections(sensor.reflection() for sensor in color_sensors)
 
         # Detect junction
         distance_reached = db.distance() > min_distance

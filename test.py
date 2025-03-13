@@ -7,10 +7,10 @@ from pybricks.hubs import PrimeHub
 from pybricks.parameters import Direction, Port, Stop
 from pybricks.pupdevices import ColorSensor, Motor
 from pybricks.robotics import DriveBase
-from pybricks.tools import wait, StopWatch
+from pybricks.tools import wait
 
 # Line tracking constants
-WHITE = 60
+WHITES = (71, 66, 62, 65)
 BLACK = 8
 SPEED = 700
 SENSOR_POSITIONS = (-3, -1, 1, 3)
@@ -29,37 +29,28 @@ db.settings(SPEED, straight_acceleration=1800, turn_rate=100, turn_acceleration=
 # 307, 1152, 183, 825
 
 
-# 0mm
-# 62.7776, 40.7231, 43.7788, 60.9610
-
-# 10mm
-# 62.7526, 58.3105, 8.3695, 58.3890
-
-def reflection_to_line(reflection: int) -> float:
+def process_reflections(reflections: tuple[int, int, int, int]) -> tuple[float, float, float, float]:
     """Convert reflection to line amount."""
-    line_amount = 1 - (reflection - BLACK) / (WHITE - BLACK)
-    return max(min(line_amount, 1), 0)
+    out = []
+    for white, ref in zip(WHITES, reflections):
+        line_amount = 1 - (ref - BLACK) / (white - BLACK)
+        line_amount = max(min(line_amount, 1), 0)
+        line_amount = curve(line_amount)
+        out.append(line_amount)
+    return tuple(out)
 
 
-# sum = [0, 0, 0, 0]
-# tally = 0
-# stopwatch = StopWatch()
-# print(db.settings())
-# for i in range(4):
-    # db.curve(82, 90)
-# db.straight(1000)
+def curve(x: float) -> float:
+    if x < 0.3:
+        return (2 / 3) * x
+    elif x < 0.4:
+        return 3 * x - 0.7
+    elif x < 0.7:
+        return (2 / 3) * x + (7 / 30)
+    else:
+        return x
+
+
 while True:
     db.drive(70, 0)
-    # if db.state()[1] >= 700:
-        # print(stopwatch.time())
-        # db.stop()
-        # break
-    # for i in range(4):
-        # sum[i] += color_sensors[i].reflection()
-    # tally += 1
-    print([sensor.reflection() for sensor in color_sensors])
-    # line_amounts = [reflection_to_line(sensor.reflection()) for sensor in color_sensors]
-    # error = sum(reflection * position for reflection, position in zip(line_amounts, SENSOR_POSITIONS))
-    # print(error)
-
-# print(sum, tally)
+    print(process_reflections(sensor.reflection() for sensor in color_sensors))
