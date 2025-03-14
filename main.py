@@ -1,37 +1,35 @@
-"""spRInt.
-
-For IDE Series 2025
-"""
+"""IDE Series 2025—SpRInt."""
 
 from pybricks.hubs import PrimeHub
-from pybricks.parameters import Direction, Port, Stop
+from pybricks.parameters import Direction, Port, Side, Stop
 from pybricks.pupdevices import ColorSensor, Motor
 from pybricks.robotics import DriveBase
 from pybricks.tools import wait
 
 # Line tracking constants
-WHITES = (71, 66, 62, 65)
+WHITES = (67, 62, 60, 64)
 BLACK = 8
 SPEED = 700
 SENSOR_POSITIONS = (-3, -1, 1, 3)
-K_P = 0
-K_I = 0
-K_D = 0
+K_P = 24.955
+K_I = 33.417
+K_D = 6.9888
 INTEGRAL_MAX = 300
 DERIVATIVE_WINDOW = 10
 JUNCTION_SKIP_FRAMES = 50
 
 hub = PrimeHub()
-left_motor = Motor(Port.A, Direction.COUNTERCLOCKWISE)
-right_motor = Motor(Port.B, Direction.CLOCKWISE)
+left_motor = Motor(Port.F, Direction.COUNTERCLOCKWISE)
+right_motor = Motor(Port.E, Direction.CLOCKWISE)
 color_sensors = (
-    ColorSensor(Port.E),
-    ColorSensor(Port.C),
-    ColorSensor(Port.F),
     ColorSensor(Port.D),
+    ColorSensor(Port.B),
+    ColorSensor(Port.A),
+    ColorSensor(Port.C),
 )
-db = DriveBase(left_motor, right_motor, 88, 160)
-db.settings(straight_speed=SPEED, straight_acceleration=69420, turn_acceleration=69420, turn_rate=69420)
+db = DriveBase(left_motor, right_motor, 88, 164)
+db.settings(SPEED, straight_acceleration=1800, turn_rate=100, turn_acceleration=400)
+# Default: 307, 1152, 183, 825
 
 
 def process_reflections(reflections: tuple[int, int, int, int]) -> tuple[float, float, float, float]:
@@ -46,12 +44,12 @@ def process_reflections(reflections: tuple[int, int, int, int]) -> tuple[float, 
 
 
 def curve(x: float) -> float:
-    if x < 0.3:
-        return (2 / 3) * x
-    elif x < 0.4:
-        return 3 * x - 0.7
-    elif x < 0.7:
-        return (2 / 3) * x + (7 / 30)
+    if x < 0.1:
+        return x
+    elif x < 0.2:
+        return 4 * x - 0.3
+    elif x < 0.8:
+        return x / 2 + 0.4
     else:
         return x
 
@@ -64,8 +62,9 @@ def linetrack(min_distance: int, *, direction: str = "both", junctions: int = 1)
     rolling_errors = [0] * DERIVATIVE_WINDOW
     error_pointer = 0
     junctions_crossed = 0
-    frames_since_junction = JUNCTION_SKIP_FRAMES
+    junction_distance = -20
     distance_indicator = False
+    junction_indicator = False
     db.reset()
     hub.display.pixel(0, 0, 0)
     hub.display.pixel(0, 1, 0)
@@ -75,7 +74,7 @@ def linetrack(min_distance: int, *, direction: str = "both", junctions: int = 1)
 
         # Detect junction
         distance_reached = db.distance() > min_distance
-        skipping_junction = frames_since_junction < JUNCTION_SKIP_FRAMES
+        skipping_junction = junction_distance <= db.distance() < junction_distance + 20
         if direction == "both":
             junction_reached = sum(line_amounts) > 3
         elif direction == "left":
@@ -94,9 +93,10 @@ def linetrack(min_distance: int, *, direction: str = "both", junctions: int = 1)
             distance_indicator = True
 
         # Hide junction skipping indicator
-        if frames_since_junction == JUNCTION_SKIP_FRAMES:
+        if junction_indicator and not skipping_junction:
             hub.display.pixel(0, 3, 0)
             hub.display.pixel(0, 4, 0)
+            junction_indicator = False
 
         # Return if all conditions met, otherwise update junction state
         if junction_reached and distance_reached and not skipping_junction:
@@ -104,11 +104,10 @@ def linetrack(min_distance: int, *, direction: str = "both", junctions: int = 1)
             if junctions_crossed >= junctions:
                 return  # End line tracking
             else:
-                frames_since_junction = 0
+                junction_distance = db.distance()
                 # Show junction skipping indicator
                 hub.display.pixel(0, 3, 100)
                 hub.display.pixel(0, 4, 100)
-        frames_since_junction += 1
 
         # PID controller
         error = sum(reflection * position for reflection, position in zip(line_amounts, SENSOR_POSITIONS))
@@ -140,6 +139,7 @@ def turn_right():
     db.curve(80, 90)
 
 
+hub.display.orientation(Side.BOTTOM)
 hub.display.icon(
     [
         [0, 0, 0, 0, 0],
