@@ -19,6 +19,7 @@ def process_reflections(reflections: tuple[int, int, int, int]) -> tuple[float, 
 
 
 def curve(x: float) -> float:
+    """Curve the line amount to keep total consistent."""
     if x < 0.1:
         return x
     elif x < 0.2:

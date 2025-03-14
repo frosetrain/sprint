@@ -38,6 +38,7 @@ def process_reflections(reflections: tuple[int, int, int, int]) -> tuple[float, 
 
 
 def curve(x: float) -> float:
+    """Curve the line amount to keep total consistent."""
     if x < 0.1:
         return x
     elif x < 0.2:
@@ -49,6 +50,7 @@ def curve(x: float) -> float:
 
 
 def average_reflection() -> tuple[int, int, int, int]:
+    """Get the average reflection for calibration."""
     totals = [0, 0, 0, 0]
     for i in range(10000):
         for i, sensor in enumerate(color_sensors):
