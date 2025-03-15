@@ -38,21 +38,8 @@ def process_reflections(reflections: tuple[int, int, int, int]) -> tuple[float, 
     for white, ref in zip(WHITES, reflections):
         line_amount = 1 - (ref - BLACK) / (white - BLACK)
         line_amount = max(min(line_amount, 1), 0)
-        line_amount = curve(line_amount)
         out.append(line_amount)
     return tuple(out)
-
-
-def curve(x: float) -> float:
-    """Curve the line amount to keep total consistent."""
-    if x < 0.1:
-        return x
-    elif x < 0.2:
-        return 4 * x - 0.3
-    elif x < 0.8:
-        return x / 2 + 0.4
-    else:
-        return x
 
 
 def linetrack(min_distance: int, *, direction: str = "both", junctions: int = 1) -> None:
