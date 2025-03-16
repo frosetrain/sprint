@@ -1,7 +1,7 @@
 """Some functions to calibrate the line tracking robot."""
 
 from pybricks.hubs import PrimeHub
-from pybricks.parameters import Direction, Port, Stop
+from pybricks.parameters import Direction, Port, Side, Stop
 from pybricks.pupdevices import ColorSensor, Motor
 from pybricks.robotics import DriveBase
 from pybricks.tools import wait
@@ -22,7 +22,7 @@ color_sensors = (
     ColorSensor(Port.C),
 )
 db = DriveBase(left_motor, right_motor, 88, 164)
-db.settings(SPEED, straight_acceleration=1800, turn_rate=100, turn_acceleration=400)
+db.settings(SPEED, straight_acceleration=1800, turn_rate=183, turn_acceleration=825)
 # Default: 307, 1152, 183, 825
 
 
@@ -45,8 +45,7 @@ def average_reflection() -> tuple[int, int, int, int]:
     return tuple(total // 10000 for total in totals)
 
 
-# print(average_reflection())
-
+wait(1000)
 while True:
     db.reset()
     while db.distance() < 2000:

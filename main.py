@@ -28,7 +28,7 @@ color_sensors = (
     ColorSensor(Port.C),
 )
 db = DriveBase(left_motor, right_motor, 88, 164)
-db.settings(SPEED, straight_acceleration=1800, turn_rate=100, turn_acceleration=400)
+db.settings(SPEED, straight_acceleration=1800, turn_rate=183, turn_acceleration=825)
 # Default: 307, 1152, 183, 825
 
 
@@ -104,7 +104,7 @@ def linetrack(min_distance: int, *, direction: str = "both", junctions: int = 1)
         integral = max(min(integral, INTEGRAL_MAX), -INTEGRAL_MAX)
         i_term = K_I * integral
         d_term = K_D * (error - previous_error)  # NOTE
-        d_term = K_D * (error - rolling_errors[error_pointer])
+        d_term = K_D * (error - rolling_errors[error_pointer]) / DERIVATIVE_WINDOW
 
         # Update errors
         previous_error = error  # NOTE
@@ -138,6 +138,7 @@ hub.display.icon(
     ]
 )
 
+wait(1000)
 # Lap 1
 linetrack(1300)
 turn_right()
