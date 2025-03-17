@@ -21,7 +21,7 @@ values = [[], [], [], []]
 total_values = []
 errors = []
 
-with open("out", "r") as f:
+with open("log0", "r") as f:
     data = f.readlines()
     for i, row in enumerate(data):
         line_amounts = process_reflections(tuple(map(int, row.split())))

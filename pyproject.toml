@@ -9,4 +9,5 @@ dependencies = [
     "p5>=0.7.1",
     "pybricks>=3.6.0",
     "pybricksdev>=1.0.1",
+    "pytest>=8.3.5",
 ]
