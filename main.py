@@ -31,8 +31,8 @@ class PID:
         self.K_P = k_p
         self.K_I = k_i
         self.K_D = k_d
-        self.INTEGRAL_MAX = 300
-        self.DERIVATIVE_WINDOW = 10
+        self.INTEGRAL_MAX = 20
+        self.DERIVATIVE_WINDOW = 5
         self.integral = 0
         self.rolling_errors = [0] * self.DERIVATIVE_WINDOW
         self.error_pointer = 0
@@ -72,10 +72,10 @@ def linetrack(min_distance: int, *, direction: str = "both", junctions: int = 1)
     junction_distance = -junction_size
     distance_indicator = False
     junction_indicator = False
-    db.reset()
     hub.display.pixel(0, 0, 0)
     hub.display.pixel(0, 1, 0)
     pid_controller = PID(24.955, 33.417, 6.9888)
+    db.reset()
 
     while True:
         line_amounts = process_reflections(sensor.reflection() for sensor in color_sensors)
