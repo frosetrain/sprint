@@ -5,7 +5,7 @@ from pybricks.iodevices import XboxController
 from pybricks.parameters import Direction, Port, Side
 from pybricks.pupdevices import ColorSensor, Motor
 from pybricks.robotics import DriveBase
-from pybricks.tools import wait
+from pybricks.tools import StopWatch, run_task, wait
 
 hub = PrimeHub()
 left_motor = Motor(Port.F, Direction.COUNTERCLOCKWISE)
@@ -16,7 +16,7 @@ color_sensors = (
     ColorSensor(Port.A),
     ColorSensor(Port.C),
 )
-db = DriveBase(left_motor, right_motor, 88, 164)
+db = DriveBase(left_motor, right_motor, 88, 168)
 db.settings(700, straight_acceleration=1800, turn_rate=183, turn_acceleration=825)
 # Default: 307, 1152, 183, 825
 
@@ -31,24 +31,45 @@ class PID:
         self.K_P = k_p
         self.K_I = k_i
         self.K_D = k_d
-        self.INTEGRAL_MAX = 20
-        self.DERIVATIVE_WINDOW = 5
+        self.INTEGRAL_MAX = self.K_I / 300
+        self.DERIVATIVE_WINDOW = 50
         self.integral = 0
         self.rolling_errors = [0] * self.DERIVATIVE_WINDOW
+        self.rolling_times = [0] * self.DERIVATIVE_WINDOW
         self.error_pointer = 0
+        self.rolling_filled = False
+        self.stopwatch = StopWatch()
+        self.stopwatch.reset()
+        self.previous_time = 0
+        self.output_count = 0
 
     def update(self, error: float) -> float:
         """Get the PID output for a new error value."""
         p_term = self.K_P * error
-        self.integral += error
+        stopwatch_time = self.stopwatch.time()
+        dt = (stopwatch_time - self.previous_time) / 1000
+        self.previous_time = stopwatch_time
+        self.integral += error * dt
         self.integral = max(min(self.integral, self.INTEGRAL_MAX), -self.INTEGRAL_MAX)
         i_term = self.K_I * self.integral
-        d_term = self.K_D * (error - self.rolling_errors[self.error_pointer]) / self.DERIVATIVE_WINDOW
+        d_term = (
+            self.K_D
+            * (error - self.rolling_errors[self.error_pointer])
+            / (stopwatch_time - self.rolling_times[self.error_pointer])
+        )
+        if not self.rolling_filled:
+            d_term = 0
 
         # Update errors
         self.rolling_errors[self.error_pointer] = error
-        self.error_pointer += 1
-        self.error_pointer %= self.DERIVATIVE_WINDOW
+        self.rolling_times[self.error_pointer] = stopwatch_time
+        self.error_pointer = (self.error_pointer + 1) % self.DERIVATIVE_WINDOW
+        if not self.rolling_filled and self.error_pointer == 0:
+            self.rolling_filled = True
+
+        if stopwatch_time >= self.output_count * 100:
+            print(error, p_term, i_term, d_term)
+            self.output_count += 1
 
         return p_term + i_term + d_term
 
@@ -65,7 +86,7 @@ def process_reflections(reflections: tuple[int, int, int, int]) -> tuple[float, 
     return tuple(out)
 
 
-def linetrack(min_distance: int, *, direction: str = "both", junctions: int = 1) -> None:
+def linetrack(min_distance: int, speed: int, *, direction: str = "none", junctions: int = 1) -> None:
     """Line track using PID."""
     junctions_crossed = 0
     junction_size = 20
@@ -74,7 +95,7 @@ def linetrack(min_distance: int, *, direction: str = "both", junctions: int = 1)
     junction_indicator = False
     hub.display.pixel(0, 0, 0)
     hub.display.pixel(0, 1, 0)
-    pid_controller = PID(24.955, 33.417, 6.9888)
+    pid_controller = PID(40, 0, 0)
     db.reset()
 
     while True:
@@ -110,6 +131,7 @@ def linetrack(min_distance: int, *, direction: str = "both", junctions: int = 1)
         if junction_reached and distance_reached and not skipping_junction:
             junctions_crossed += 1
             if junctions_crossed >= junctions:
+                db.straight(36)
                 return  # End line tracking
             else:
                 junction_distance = db.distance()
@@ -118,7 +140,26 @@ def linetrack(min_distance: int, *, direction: str = "both", junctions: int = 1)
                 hub.display.pixel(0, 4, 100)
 
         error = sum(reflection * position for reflection, position in zip(line_amounts, SENSOR_POSITIONS))
-        db.drive(700, pid_controller.update(error))  # TODO: Variable speed
+        db.drive(350, pid_controller.update(error))  # TODO: Variable speed
+
+
+def simple_linetrack(p: int, i: int, d: int, distance: int = 0) -> None:
+    """Simple line tracking."""
+    pid_controller = PID(p, i, d)
+    db.reset()
+    frame_count = 0
+    stopwatch = StopWatch()
+    stopwatch.reset()
+    while True:
+        if distance and db.distance() > distance:
+            db.stop()
+            break
+        line_amounts = process_reflections(sensor.reflection() for sensor in color_sensors)
+        error = sum(reflection * position for reflection, position in zip(line_amounts, SENSOR_POSITIONS))
+        turn_rate = pid_controller.update(error)
+        db.drive(700, turn_rate)
+        frame_count += 1
+    print("fps:", frame_count / stopwatch.time() * 1000)
 
 
 def turn_left():
@@ -140,23 +181,6 @@ def average_reflection() -> tuple[int, int, int, int]:
     return tuple(total // 10000 for total in totals)
 
 
-def bang_bang():
-    """Test proportional or bang-bang control."""
-    while True:
-        db.reset()
-        while db.distance() < 2000:
-            line_amounts = process_reflections(sensor.reflection() for sensor in color_sensors)
-            error = sum(reflection * position for reflection, position in zip(line_amounts, SENSOR_POSITIONS))
-            # if error > 0:
-            # error = 1
-            # else:
-            # error = -1
-            # print(error)
-            db.drive(700, error * 28)
-        db.stop()
-        db.turn(170)
-
-
 def print_reflections():
     """Continuously print space-separated reflection values."""
     while True:
@@ -172,22 +196,39 @@ def controller_drive():
         db.drive(throttle * 7, steering)
 
 
-def main():
+async def main():
     """Main function."""
     hub.display.orientation(Side.BOTTOM)
     hub.display.icon(
         [
             [0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0],
-            [0, 0, 50, 0, 0],
-            [0, 50, 0, 50, 0],
-            [50, 0, 0, 0, 50],
+            [0, 0, 100, 0, 0],
+            [0, 100, 0, 100, 0],
+            [100, 0, 0, 0, 100],
         ]
     )
 
-    wait(1000)
+    wait(500)
+
+    # db.turn(180)
+    while True:
+        simple_linetrack(30, 50, 400, 1600)
+        db.brake()
+        wait(200)
+        db.turn(180)
+        wait(200)
+
     # Lap 1
-    linetrack(1300)
+    linetrack(300, 700)
+    await hub.speaker.beep()
+    linetrack(180, 300)
+    await hub.speaker.beep()
+    linetrack(540, 700)
+    await hub.speaker.beep()
+    linetrack(130, 400)
+    await hub.speaker.beep()
+    linetrack(310, 700, direction="both")
     turn_right()
     linetrack(450)
     turn_right()
@@ -217,4 +258,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    run_task(main())
