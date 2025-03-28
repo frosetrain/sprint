@@ -5,7 +5,8 @@ from pybricks.iodevices import XboxController
 from pybricks.parameters import Direction, Port, Side
 from pybricks.pupdevices import ColorSensor, Motor
 from pybricks.robotics import DriveBase
-from pybricks.tools import StopWatch, run_task, wait
+from pybricks.tools import StopWatch, wait
+from umath import pi, sin
 
 hub = PrimeHub()
 left_motor = Motor(Port.F, Direction.COUNTERCLOCKWISE)
@@ -16,8 +17,8 @@ color_sensors = (
     ColorSensor(Port.A),
     ColorSensor(Port.C),
 )
-db = DriveBase(left_motor, right_motor, 88, 168)
-db.settings(700, straight_acceleration=1800, turn_rate=183, turn_acceleration=825)
+db = DriveBase(left_motor, right_motor, 88, 163)
+db.settings(700, straight_acceleration=1400, turn_rate=183, turn_acceleration=825)
 # Default: 307, 1152, 183, 825
 
 SENSOR_POSITIONS = (-3, -1, 1, 3)
@@ -32,7 +33,8 @@ class PID:
         self.K_I = k_i
         self.K_D = k_d
         self.INTEGRAL_MAX = self.K_I / 300
-        self.DERIVATIVE_WINDOW = 50
+        # self.INTEGRAL_MAX = 1000
+        self.DERIVATIVE_WINDOW = 20
         self.integral = 0
         self.rolling_errors = [0] * self.DERIVATIVE_WINDOW
         self.rolling_times = [0] * self.DERIVATIVE_WINDOW
@@ -45,20 +47,30 @@ class PID:
 
     def update(self, error: float) -> float:
         """Get the PID output for a new error value."""
-        p_term = self.K_P * error
+        # Update times
         stopwatch_time = self.stopwatch.time()
         dt = (stopwatch_time - self.previous_time) / 1000
         self.previous_time = stopwatch_time
+
+        # Proportional term
+        p_term = self.K_P * error
+
+        # Integral term
         self.integral += error * dt
         self.integral = max(min(self.integral, self.INTEGRAL_MAX), -self.INTEGRAL_MAX)
         i_term = self.K_I * self.integral
-        d_term = (
-            self.K_D
-            * (error - self.rolling_errors[self.error_pointer])
-            / (stopwatch_time - self.rolling_times[self.error_pointer])
-        )
-        if not self.rolling_filled:
+
+        # Derivative term
+        if stopwatch_time - self.rolling_times[self.error_pointer] <= 0:
             d_term = 0
+        elif not self.rolling_filled:
+            d_term = 0
+        else:
+            d_term = (
+                self.K_D
+                * (error - self.rolling_errors[self.error_pointer])
+                / (stopwatch_time - self.rolling_times[self.error_pointer])
+            )
 
         # Update errors
         self.rolling_errors[self.error_pointer] = error
@@ -67,6 +79,7 @@ class PID:
         if not self.rolling_filled and self.error_pointer == 0:
             self.rolling_filled = True
 
+        # Output reading
         if stopwatch_time >= self.output_count * 100:
             print(error, p_term, i_term, d_term)
             self.output_count += 1
@@ -99,7 +112,7 @@ def linetrack(min_distance: int, speed: int, *, direction: str = "none", junctio
     db.reset()
 
     while True:
-        line_amounts = process_reflections(sensor.reflection() for sensor in color_sensors)
+        line_amounts = process_reflections(tuple(sensor.reflection() for sensor in color_sensors))
 
         # Detect junction
         distance_reached = db.distance() > min_distance
@@ -154,9 +167,10 @@ def simple_linetrack(p: int, i: int, d: int, distance: int = 0) -> None:
         if distance and db.distance() > distance:
             db.stop()
             break
-        line_amounts = process_reflections(sensor.reflection() for sensor in color_sensors)
-        error = sum(reflection * position for reflection, position in zip(line_amounts, SENSOR_POSITIONS))
-        turn_rate = pid_controller.update(error)
+        line_amounts = process_reflections(tuple(sensor.reflection() for sensor in color_sensors))
+        linear_error = sum(reflection * position for reflection, position in zip(line_amounts, SENSOR_POSITIONS))
+        sined_error = 3 * sin(linear_error * pi / 6)
+        turn_rate = pid_controller.update(sined_error)
         db.drive(700, turn_rate)
         frame_count += 1
     print("fps:", frame_count / stopwatch.time() * 1000)
@@ -196,7 +210,7 @@ def controller_drive():
         db.drive(throttle * 7, steering)
 
 
-async def main():
+def main():
     """Main function."""
     hub.display.orientation(Side.BOTTOM)
     hub.display.icon(
@@ -213,21 +227,21 @@ async def main():
 
     # db.turn(180)
     while True:
-        simple_linetrack(30, 50, 400, 1600)
+        simple_linetrack(40, 0, 1600, 1600)  # TODO: Tune PID
         db.brake()
-        wait(200)
+        wait(500)
         db.turn(180)
-        wait(200)
+        wait(500)
 
     # Lap 1
     linetrack(300, 700)
-    await hub.speaker.beep()
+    hub.speaker.beep()
     linetrack(180, 300)
-    await hub.speaker.beep()
+    hub.speaker.beep()
     linetrack(540, 700)
-    await hub.speaker.beep()
+    hub.speaker.beep()
     linetrack(130, 400)
-    await hub.speaker.beep()
+    hub.speaker.beep()
     linetrack(310, 700, direction="both")
     turn_right()
     linetrack(450)
@@ -258,4 +272,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    run_task(main())
+    main()
