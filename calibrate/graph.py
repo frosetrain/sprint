@@ -21,7 +21,7 @@ values = [[], [], [], []]
 total_values = []
 errors = []
 
-with open("calibrate/pi0", "r") as f:
+with open("calibrate/pd0", "r") as f:
     data = f.readlines()
     for i, row in enumerate(data):
         # line_amounts = process_reflections(tuple(map(int, row.split())))

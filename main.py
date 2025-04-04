@@ -34,7 +34,7 @@ class PID:
         self.K_D = k_d
         self.INTEGRAL_MAX = self.K_I / 300
         # self.INTEGRAL_MAX = 1000
-        self.DERIVATIVE_WINDOW = 20
+        self.DERIVATIVE_WINDOW = 10
         self.integral = 0
         self.rolling_errors = [0] * self.DERIVATIVE_WINDOW
         self.rolling_times = [0] * self.DERIVATIVE_WINDOW
@@ -108,7 +108,7 @@ def linetrack(min_distance: int, speed: int, *, direction: str = "none", junctio
     junction_indicator = False
     hub.display.pixel(0, 0, 0)
     hub.display.pixel(0, 1, 0)
-    pid_controller = PID(40, 0, 0)
+    pid_controller = PID(50, 0, 2000)
     db.reset()
 
     while True:
@@ -227,7 +227,7 @@ def main():
 
     # db.turn(180)
     while True:
-        simple_linetrack(40, 0, 1600, 1600)  # TODO: Tune PID
+        simple_linetrack(50, 0, 2000, 1600)  # TODO: Tune PID
         db.brake()
         wait(500)
         db.turn(180)
