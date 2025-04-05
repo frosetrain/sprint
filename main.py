@@ -1,25 +1,9 @@
 """IDE Series 2025—SpRInt."""
 
-from pybricks.hubs import PrimeHub
-from pybricks.iodevices import XboxController
-from pybricks.parameters import Direction, Port, Side
-from pybricks.pupdevices import ColorSensor, Motor
-from pybricks.robotics import DriveBase
 from pybricks.tools import StopWatch, wait
 from umath import pi, sin
 
-hub = PrimeHub()
-left_motor = Motor(Port.F, Direction.COUNTERCLOCKWISE)
-right_motor = Motor(Port.E, Direction.CLOCKWISE)
-color_sensors = (
-    ColorSensor(Port.D),
-    ColorSensor(Port.B),
-    ColorSensor(Port.A),
-    ColorSensor(Port.C),
-)
-db = DriveBase(left_motor, right_motor, 88, 163)
-db.settings(700, straight_acceleration=1400, turn_rate=183, turn_acceleration=825)
-# Default: 307, 1152, 183, 825
+from hardware import color_sensors, db, hub
 
 SENSOR_POSITIONS = (-3, -1, 1, 3)
 
@@ -144,7 +128,8 @@ def linetrack(min_distance: int, speed: int, *, direction: str = "none", junctio
         if junction_reached and distance_reached and not skipping_junction:
             junctions_crossed += 1
             if junctions_crossed >= junctions:
-                db.straight(36)
+                if direction != "none":
+                    db.straight(36)
                 return  # End line tracking
             else:
                 junction_distance = db.distance()
@@ -152,28 +137,10 @@ def linetrack(min_distance: int, speed: int, *, direction: str = "none", junctio
                 hub.display.pixel(0, 3, 100)
                 hub.display.pixel(0, 4, 100)
 
-        error = sum(reflection * position for reflection, position in zip(line_amounts, SENSOR_POSITIONS))
-        db.drive(350, pid_controller.update(error))  # TODO: Variable speed
-
-
-def simple_linetrack(p: int, i: int, d: int, distance: int = 0) -> None:
-    """Simple line tracking."""
-    pid_controller = PID(p, i, d)
-    db.reset()
-    frame_count = 0
-    stopwatch = StopWatch()
-    stopwatch.reset()
-    while True:
-        if distance and db.distance() > distance:
-            db.stop()
-            break
-        line_amounts = process_reflections(tuple(sensor.reflection() for sensor in color_sensors))
         linear_error = sum(reflection * position for reflection, position in zip(line_amounts, SENSOR_POSITIONS))
         sined_error = 3 * sin(linear_error * pi / 6)
         turn_rate = pid_controller.update(sined_error)
         db.drive(700, turn_rate)
-        frame_count += 1
-    print("fps:", frame_count / stopwatch.time() * 1000)
 
 
 def turn_left():
@@ -186,33 +153,8 @@ def turn_right():
     db.curve(80, 90)
 
 
-def average_reflection() -> tuple[int, int, int, int]:
-    """Get the average reflection for calibration."""
-    totals = [0, 0, 0, 0]
-    for i in range(10000):
-        for i, sensor in enumerate(color_sensors):
-            totals[i] += sensor.reflection()
-    return tuple(total // 10000 for total in totals)
-
-
-def print_reflections():
-    """Continuously print space-separated reflection values."""
-    while True:
-        print(" ".join(sensor.reflection() for sensor in color_sensors))
-
-
-def controller_drive():
-    """Drive the robot using a controller (hehehehaw)."""
-    controller = XboxController()
-    while True:
-        steering = controller.joystick_left()[0]
-        throttle = controller.triggers()[1]
-        db.drive(throttle * 7, steering)
-
-
 def main():
     """Main function."""
-    hub.display.orientation(Side.BOTTOM)
     hub.display.icon(
         [
             [0, 0, 0, 0, 0],
@@ -222,53 +164,55 @@ def main():
             [100, 0, 0, 0, 100],
         ]
     )
+    # hub.speaker.play_notes(test)
 
     wait(500)
 
-    # db.turn(180)
-    while True:
-        simple_linetrack(50, 0, 2000, 1600)  # TODO: Tune PID
-        db.brake()
-        wait(500)
-        db.turn(180)
-        wait(500)
-
     # Lap 1
-    linetrack(300, 700)
-    hub.speaker.beep()
-    linetrack(180, 300)
-    hub.speaker.beep()
-    linetrack(540, 700)
-    hub.speaker.beep()
-    linetrack(130, 400)
-    hub.speaker.beep()
-    linetrack(310, 700, direction="both")
+    linetrack(533 - 83, 700)
+    hub.speaker.beep(262, 50)
+    linetrack(213 + 83 + 50, 400)
+    hub.speaker.beep(294, 50)
+    linetrack(482 - 50 - 60, 700)
+    hub.speaker.beep(330, 50)
+    linetrack(123 + 60, 500)
+    hub.speaker.beep(349, 50)
+    linetrack(323 - 50, 700, direction="both")
+    hub.speaker.beep(392, 50)
     turn_right()
-    linetrack(450)
+    linetrack(397 - 36 - 83, 700)
+    hub.speaker.beep(440, 50)
+    linetrack(0 + 83 + 50, 400)
+    hub.speaker.beep(494, 50)
+    linetrack(287 - 50 - 50, 700, direction="both")
+    hub.speaker.beep(523, 50)
     turn_right()
-    linetrack(2500, junctions=2)  # Lap 2
-    turn_right()
-    linetrack(150)
-    turn_right()
-    linetrack(70, direction="right")
-    turn_right()
-    linetrack(450)
-    turn_right()
-    linetrack(80)
-    turn_left()
-    linetrack(1150, direction="none")
-    db.turn(12.87)
-    db.straight(436)
-    db.turn(-12.87)
-    linetrack(850, direction="right")
-    turn_right()
-    linetrack(150, direction="left")
-    turn_left()
-    linetrack(90)
-    turn_left()
-    linetrack(450)
-    turn_right()
-    linetrack(986, direction="none")
+    linetrack(-999, 700)
+    hub.speaker.beep(262, 50)
+
+    # Lap 2
+    # turn_right()
+    # linetrack(150)
+    # turn_right()
+    # linetrack(70, direction="right")
+    # turn_right()
+    # linetrack(450)
+    # turn_right()
+    # linetrack(80)
+    # turn_left()
+    # linetrack(1150, direction="none")
+    # db.turn(12.87)
+    # db.straight(436)
+    # db.turn(-12.87)
+    # linetrack(850, direction="right")
+    # turn_right()
+    # linetrack(150, direction="left")
+    # turn_left()
+    # linetrack(90)
+    # turn_left()
+    # linetrack(450)
+    # turn_right()
+    # linetrack(986, direction="none")
 
 
 if __name__ == "__main__":

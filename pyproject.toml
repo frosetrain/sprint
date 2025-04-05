@@ -5,9 +5,8 @@ description = "IDE Series 2025"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "click>=8.1.8",
     "matplotlib>=3.10.1",
-    "p5>=0.7.1",
     "pybricks>=3.6.0",
     "pybricksdev>=1.0.1",
-    "pytest>=8.3.5",
 ]
