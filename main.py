@@ -1,5 +1,6 @@
 """IDE Series 2025—SpRInt."""
 
+from pybricks.parameters import Color
 from pybricks.tools import StopWatch, wait
 from umath import pi, sin
 
@@ -164,7 +165,32 @@ def main():
             [100, 0, 0, 0, 100],
         ]
     )
-    # hub.speaker.play_notes(test)
+    # hub.light.on(Color.GREEN)
+    hub.light.animate(
+        (
+            Color.WHITE,  # 0
+            Color.NONE,  # 50
+            Color.WHITE,  # 100
+            Color.NONE,  # 150
+            Color.NONE,  # 200
+            Color.NONE,  # 250
+            Color.NONE,  # 300
+            Color.NONE,  # 350
+            Color.NONE,  # 400
+            Color.NONE,  # 450
+            Color.RED,  # 500
+            Color.RED,  # 550
+            Color.NONE,  # 600
+            Color.NONE,  # 650
+            Color.NONE,  # 700
+            Color.NONE,  # 750
+            Color.NONE,  # 800
+            Color.NONE,  # 850
+            Color.NONE,  # 900
+            Color.NONE,  # 950
+        ),
+        70,
+    )
 
     wait(500)
 
