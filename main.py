@@ -141,7 +141,7 @@ def linetrack(min_distance: int, speed: int, *, direction: str = "none", junctio
         linear_error = sum(reflection * position for reflection, position in zip(line_amounts, SENSOR_POSITIONS))
         sined_error = 3 * sin(linear_error * pi / 6)
         turn_rate = pid_controller.update(sined_error)
-        db.drive(700, turn_rate)
+        db.drive(speed, turn_rate)
 
 
 def turn_left():
@@ -154,8 +154,21 @@ def turn_right():
     db.curve(80, 90)
 
 
+def c_major_scale():
+    """A generator for notes in the C major scale."""
+    saved = []
+    for element in (262, 294, 330, 349, 392, 440, 494, 523):
+        yield element
+        saved.append(element)
+
+    while saved:
+        for element in saved:
+            yield element
+
+
 def main():
     """Main function."""
+    notes = c_major_scale()
     hub.display.icon(
         [
             [0, 0, 0, 0, 0],
@@ -189,32 +202,36 @@ def main():
             Color.NONE,  # 900
             Color.NONE,  # 950
         ),
-        70,
+        75,
     )
 
     wait(500)
 
     # Lap 1
-    linetrack(533 - 83, 700)
-    hub.speaker.beep(262, 50)
-    linetrack(213 + 83 + 50, 400)
-    hub.speaker.beep(294, 50)
-    linetrack(482 - 50 - 60, 700)
-    hub.speaker.beep(330, 50)
-    linetrack(123 + 60, 500)
-    hub.speaker.beep(349, 50)
-    linetrack(323 - 50, 700, direction="both")
-    hub.speaker.beep(392, 50)
+    linetrack(533 - 83, 700 / 2)  # PS-T1i
+    hub.speaker.beep(next(notes), 50)
+    linetrack(213 + 83 + 50 - 80, 400 / 2)  # HACK: T1i-T1o
+    hub.speaker.beep(next(notes), 50)
+    linetrack(482 - 50 - 60, 700 / 2)  # T1o-T2i
+    hub.speaker.beep(next(notes), 50)
+    linetrack(123 + 60, 500 / 2)  # T2i-T2o
+    hub.speaker.beep(next(notes), 50)
+    linetrack(323 - 150, 700 / 2, direction="both")  # T2o-J1
+    hub.speaker.beep(next(notes), 50)
     turn_right()
-    linetrack(397 - 36 - 83, 700)
-    hub.speaker.beep(440, 50)
-    linetrack(0 + 83 + 50, 400)
-    hub.speaker.beep(494, 50)
-    linetrack(287 - 50 - 50, 700, direction="both")
-    hub.speaker.beep(523, 50)
+    linetrack(397 - 36 - 83, 700 / 2)  # J1-T3i
+    hub.speaker.beep(next(notes), 50)
+    linetrack(0 + 83 + 50, 400 / 2)  # T3i-T3o
+    hub.speaker.beep(next(notes), 50)
+    # linetrack(287 - 150 - 50, 700 / 2, direction="both")  # T3o-J2
+    hub.speaker.beep(next(notes), 50)
     turn_right()
-    linetrack(-999, 700)
-    hub.speaker.beep(262, 50)
+    linetrack(538 - 36 - 83, 700 / 2)  # J2-T4i
+    hub.speaker.beep(next(notes), 50)
+    linetrack(217 + 83 + 50, 400 / 2)  # T4i-T4o
+    hub.speaker.beep(next(notes), 50)
+    linetrack(306 - 50, 700 / 2)  # T4o-S/F
+    db.stop()
 
     # Lap 2
     # turn_right()

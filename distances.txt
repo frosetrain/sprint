@@ -17,18 +17,18 @@ Distances
 =========
 PS-T1i s700 d533
     -83 decel
-T1i-T1o s400 d213
+T1i-T1o s400 d213 -80 magic
     +50 align
 T1o-T2i s700 d482
     -60 decel
 T2i-T2o s500 d123
-T2o-J1 s700 d323 -50 juncbuf
+T2o-J1 s700 d323 -150 juncbuf
 J1-T3i s700 d397 -36 sensor-axle
     -83 decel
 T3i-T3o s400 d0
     +50 align
-T3o-J2 s700 d287 -50 juncbuf
-J2-T4i s700 d??? -36 sensor-axle
+T3o-J2 s700 d287 -150 juncbuf
+J2-T4i s700 d538 -36 sensor-axle
     -83 decel
 T4i-T4o s400 d217
     +50 align
