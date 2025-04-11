@@ -141,7 +141,14 @@ def linetrack(min_distance: int, speed: int, *, direction: str = "none", junctio
         linear_error = sum(reflection * position for reflection, position in zip(line_amounts, SENSOR_POSITIONS))
         sined_error = 3 * sin(linear_error * pi / 6)
         turn_rate = pid_controller.update(sined_error)
-        db.drive(speed, turn_rate)
+        drive_speed = speed
+
+        # Turn back to the line if the robot ran off the line
+        if sum(line_amounts) < 0.5:
+            turn_rate = 100
+            drive_speed = speed / 2
+
+        db.drive(drive_speed, turn_rate)
 
 
 def turn_left():
