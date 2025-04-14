@@ -5,6 +5,7 @@ from pybricks.tools import StopWatch, wait
 from umath import pi, sin
 
 from hardware import color_sensors, db, hub
+from never_gonna_give_you_up import BEEPS
 
 SENSOR_POSITIONS = (-3, -1, 1, 3)
 
@@ -175,6 +176,7 @@ def c_major_scale():
 
 def main():
     """Main function."""
+    hub.speaker.volume(25)
     notes = c_major_scale()
     hub.display.icon(
         [
@@ -185,7 +187,8 @@ def main():
             [100, 0, 0, 0, 100],
         ]
     )
-    # hub.light.on(Color.GREEN)
+
+    # Airbus beacon and strobe lights
     hub.light.animate(
         (
             Color.WHITE,  # 0
@@ -211,6 +214,12 @@ def main():
         ),
         75,
     )
+
+    for freq, duration in BEEPS:
+        if freq > 0:
+            hub.speaker.beep(freq, duration)
+        else:
+            wait(duration)
 
     wait(500)
 
