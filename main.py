@@ -5,7 +5,8 @@ from pybricks.tools import StopWatch, wait
 from umath import pi, sin
 
 from hardware import color_sensors, db, hub
-from never_gonna_give_you_up import BEEPS
+from music.carry_that_weight import BEEPS as CARRY_THAT_WEIGHT
+from music.golden_slumbers import BEEPS as GOLDEN_SLUMBERS
 
 SENSOR_POSITIONS = (-3, -1, 1, 3)
 
@@ -85,7 +86,7 @@ def process_reflections(reflections: tuple[int, int, int, int]) -> tuple[float, 
     return tuple(out)
 
 
-def linetrack(min_distance: int, speed: int, *, direction: str = "none", junctions: int = 1) -> None:
+def linetrack(min_distance: int | float, speed: int | float, *, direction: str = "none", junctions: int = 1) -> None:
     """Line track using PID."""
     junctions_crossed = 0
     junction_size = 20
@@ -152,12 +153,12 @@ def linetrack(min_distance: int, speed: int, *, direction: str = "none", junctio
         db.drive(drive_speed, turn_rate)
 
 
-def turn_left():
+def turn_left() -> None:
     """Turn left."""
     db.curve(80, -90)
 
 
-def turn_right():
+def turn_right() -> None:
     """Turn right."""
     db.curve(80, 90)
 
@@ -172,6 +173,15 @@ def c_major_scale():
     while saved:
         for element in saved:
             yield element
+
+
+def play_song(notes: list[tuple[int, int]]) -> None:
+    """Play a song from a list of tuples of frequency and duration."""
+    for freq, duration in notes:
+        if freq > 0:
+            hub.speaker.beep(freq, duration)
+        else:
+            wait(duration)
 
 
 def main():
@@ -215,12 +225,8 @@ def main():
         75,
     )
 
-    for freq, duration in BEEPS:
-        if freq > 0:
-            hub.speaker.beep(freq, duration)
-        else:
-            wait(duration)
-
+    play_song(GOLDEN_SLUMBERS)
+    play_song(CARRY_THAT_WEIGHT)
     wait(500)
 
     # Lap 1
@@ -248,30 +254,6 @@ def main():
     hub.speaker.beep(next(notes), 50)
     linetrack(306 - 50, 700 / 2)  # T4o-S/F
     db.stop()
-
-    # Lap 2
-    # turn_right()
-    # linetrack(150)
-    # turn_right()
-    # linetrack(70, direction="right")
-    # turn_right()
-    # linetrack(450)
-    # turn_right()
-    # linetrack(80)
-    # turn_left()
-    # linetrack(1150, direction="none")
-    # db.turn(12.87)
-    # db.straight(436)
-    # db.turn(-12.87)
-    # linetrack(850, direction="right")
-    # turn_right()
-    # linetrack(150, direction="left")
-    # turn_left()
-    # linetrack(90)
-    # turn_left()
-    # linetrack(450)
-    # turn_right()
-    # linetrack(986, direction="none")
 
 
 if __name__ == "__main__":
