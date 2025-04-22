@@ -1,8 +1,17 @@
 """Functions for calibration."""
 
+from pybricks.hubs import PrimeHub
+from pybricks.parameters import Port
+from pybricks.pupdevices import ColorSensor
 from ustruct import calcsize, pack_into, unpack_from
 
-from hardware import color_sensors, hub
+hub = PrimeHub()
+color_sensors = (
+    ColorSensor(Port.D),
+    ColorSensor(Port.B),
+    ColorSensor(Port.A),
+    ColorSensor(Port.C),
+)
 
 
 def average_reflection(samples: int = 10000) -> tuple[int, int, int, int]:

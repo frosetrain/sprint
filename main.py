@@ -1,12 +1,27 @@
 """IDE Series 2025—SpRInt."""
 
-from pybricks.parameters import Color
+from pybricks.hubs import PrimeHub
+from pybricks.parameters import Color, Direction, Port, Side
+from pybricks.pupdevices import ColorSensor, Motor
+from pybricks.robotics import DriveBase
 from pybricks.tools import StopWatch, wait
 from umath import pi, sin
 
-from hardware import color_sensors, db, hub
 from music.carry_that_weight import BEEPS as CARRY_THAT_WEIGHT
 from music.golden_slumbers import BEEPS as GOLDEN_SLUMBERS
+
+hub = PrimeHub()
+hub.display.orientation(Side.BOTTOM)
+left_motor = Motor(Port.F, Direction.COUNTERCLOCKWISE)
+right_motor = Motor(Port.E, Direction.CLOCKWISE)
+color_sensors = (
+    ColorSensor(Port.D),
+    ColorSensor(Port.B),
+    ColorSensor(Port.A),
+    ColorSensor(Port.C),
+)
+db = DriveBase(left_motor, right_motor, 88, 163)
+db.settings(700, straight_acceleration=2000, turn_rate=183, turn_acceleration=825)
 
 SENSOR_POSITIONS = (-3, -1, 1, 3)
 
@@ -148,7 +163,7 @@ def linetrack(min_distance: int | float, speed: int | float, *, direction: str =
         # Turn back to the line if the robot ran off the line
         if sum(line_amounts) < 0.5:
             turn_rate = 100
-            drive_speed = speed / 2
+            drive_speed = 100
 
         db.drive(drive_speed, turn_rate)
 
@@ -186,7 +201,7 @@ def play_song(notes: list[tuple[int, int]]) -> None:
 
 def main():
     """Main function."""
-    hub.speaker.volume(25)
+    hub.speaker.volume(100)
     notes = c_major_scale()
     hub.display.icon(
         [
@@ -199,60 +214,41 @@ def main():
     )
 
     # Airbus beacon and strobe lights
-    hub.light.animate(
-        (
-            Color.WHITE,  # 0
-            Color.NONE,  # 50
-            Color.WHITE,  # 100
-            Color.NONE,  # 150
-            Color.NONE,  # 200
-            Color.NONE,  # 250
-            Color.NONE,  # 300
-            Color.NONE,  # 350
-            Color.NONE,  # 400
-            Color.NONE,  # 450
-            Color.RED,  # 500
-            Color.RED,  # 550
-            Color.NONE,  # 600
-            Color.NONE,  # 650
-            Color.NONE,  # 700
-            Color.NONE,  # 750
-            Color.NONE,  # 800
-            Color.NONE,  # 850
-            Color.NONE,  # 900
-            Color.NONE,  # 950
-        ),
-        75,
-    )
+    strobe_beacon_colors = [Color.NONE] * 20
+    strobe_beacon_colors[0] = Color.WHITE
+    strobe_beacon_colors[2] = Color.WHITE
+    strobe_beacon_colors[10] = Color.RED
+    strobe_beacon_colors[11] = Color.RED
+    hub.light.animate(strobe_beacon_colors, 75)
 
-    play_song(GOLDEN_SLUMBERS)
-    play_song(CARRY_THAT_WEIGHT)
+    # play_song(GOLDEN_SLUMBERS)
+    # play_song(CARRY_THAT_WEIGHT)
     wait(500)
 
     # Lap 1
-    linetrack(533 - 83, 700 / 2)  # PS-T1i
+    linetrack(533 - 83, 700)  # PS-T1i
     hub.speaker.beep(next(notes), 50)
-    linetrack(213 + 83 + 50 - 80, 400 / 2)  # HACK: T1i-T1o
+    linetrack(213 + 83 + 50 - 80, 400)  # HACK: T1i-T1o
     hub.speaker.beep(next(notes), 50)
-    linetrack(482 - 50 - 60, 700 / 2)  # T1o-T2i
+    linetrack(482 - 50 - 60, 700)  # T1o-T2i
     hub.speaker.beep(next(notes), 50)
-    linetrack(123 + 60, 500 / 2)  # T2i-T2o
+    linetrack(123 + 60, 500)  # T2i-T2o
     hub.speaker.beep(next(notes), 50)
-    linetrack(323 - 150, 700 / 2, direction="both")  # T2o-J1
-    hub.speaker.beep(next(notes), 50)
-    turn_right()
-    linetrack(397 - 36 - 83, 700 / 2)  # J1-T3i
-    hub.speaker.beep(next(notes), 50)
-    linetrack(0 + 83 + 50, 400 / 2)  # T3i-T3o
-    hub.speaker.beep(next(notes), 50)
-    # linetrack(287 - 150 - 50, 700 / 2, direction="both")  # T3o-J2
+    linetrack(323 - 150, 700, direction="both")  # T2o-J1
     hub.speaker.beep(next(notes), 50)
     turn_right()
-    linetrack(538 - 36 - 83, 700 / 2)  # J2-T4i
+    linetrack(397 - 36 - 83, 700)  # J1-T3i
     hub.speaker.beep(next(notes), 50)
-    linetrack(217 + 83 + 50, 400 / 2)  # T4i-T4o
+    linetrack(0 + 83 + 50, 400)  # T3i-T3o
     hub.speaker.beep(next(notes), 50)
-    linetrack(306 - 50, 700 / 2)  # T4o-S/F
+    # linetrack(287 - 150 - 50, 700, direction="both")  # T3o-J2
+    hub.speaker.beep(next(notes), 50)
+    turn_right()
+    linetrack(538 - 36 - 83, 700)  # J2-T4i
+    hub.speaker.beep(next(notes), 50)
+    linetrack(217 + 83 + 50, 400)  # T4i-T4o
+    hub.speaker.beep(next(notes), 50)
+    linetrack(306 - 50, 700)  # T4o-S/F
     db.stop()
 
 
