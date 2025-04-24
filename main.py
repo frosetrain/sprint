@@ -20,8 +20,8 @@ color_sensors = (
     ColorSensor(Port.A),
     ColorSensor(Port.C),
 )
-db = DriveBase(left_motor, right_motor, 88, 163)
-db.settings(700, straight_acceleration=2000, turn_rate=183, turn_acceleration=825)
+db = DriveBase(left_motor, right_motor, 62.4, 160)
+db.settings(straight_speed=500, straight_acceleration=2000, turn_rate=130, turn_acceleration=585)
 
 SENSOR_POSITIONS = (-3, -1, 1, 3)
 
@@ -226,27 +226,27 @@ def main():
     wait(500)
 
     # Lap 1
-    linetrack(533 - 83, 700)  # PS-T1i
+    linetrack(533 - 40, 700)  # PS-T1i
     hub.speaker.beep(next(notes), 50)
-    linetrack(213 + 83 + 50 - 80, 400)  # HACK: T1i-T1o
+    linetrack(213 + 40 + 50 - 80, 400)  # HACK: T1i-T1o
     hub.speaker.beep(next(notes), 50)
-    linetrack(482 - 50 - 60, 700)  # T1o-T2i
+    linetrack(482 - 50 - 23, 700)  # T1o-T2i
     hub.speaker.beep(next(notes), 50)
-    linetrack(123 + 60, 500)  # T2i-T2o
+    linetrack(123 + 23, 500)  # T2i-T2o
     hub.speaker.beep(next(notes), 50)
     linetrack(323 - 150, 700, direction="both")  # T2o-J1
     hub.speaker.beep(next(notes), 50)
     turn_right()
-    linetrack(397 - 36 - 83, 700)  # J1-T3i
+    linetrack(397 - 36 - 40, 700)  # J1-T3i
     hub.speaker.beep(next(notes), 50)
-    linetrack(0 + 83 + 50, 400)  # T3i-T3o
+    linetrack(0 + 40 + 50, 400)  # T3i-T3o
     hub.speaker.beep(next(notes), 50)
     # linetrack(287 - 150 - 50, 700, direction="both")  # T3o-J2
     hub.speaker.beep(next(notes), 50)
     turn_right()
-    linetrack(538 - 36 - 83, 700)  # J2-T4i
+    linetrack(538 - 36 - 40, 700)  # J2-T4i
     hub.speaker.beep(next(notes), 50)
-    linetrack(217 + 83 + 50, 400)  # T4i-T4o
+    linetrack(217 + 40 + 50, 400)  # T4i-T4o
     hub.speaker.beep(next(notes), 50)
     linetrack(306 - 50, 700)  # T4o-S/F
     db.stop()

@@ -15,21 +15,21 @@ Lap 2: T1 T2 J1 J3 J4 J2 T3 J1 J3 T5 T6 T7 J4 J3 J1 T3 J2 T4
 
 Distances
 =========
-PS-T1i s700 d533
-    -83 decel
-T1i-T1o s400 d213 -80 magic
+PS-T1i s500 d533
+    -40 decel
+T1i-T1o s300 d213 -80 magic
     +50 align
-T1o-T2i s700 d482
-    -60 decel
-T2i-T2o s500 d123
-T2o-J1 s700 d323 -150 juncbuf
-J1-T3i s700 d397 -36 sensor-axle
-    -83 decel
-T3i-T3o s400 d0
+T1o-T2i s500 d482
+    -23 decel
+T2i-T2o s400 d123
+T2o-J1 s500 d323 -150 juncbuf
+J1-T3i s500 d397 -36 sensor-axle
+    -40 decel
+T3i-T3o s300 d0
     +50 align
-T3o-J2 s700 d287 -150 juncbuf
-J2-T4i s700 d538 -36 sensor-axle
-    -83 decel
-T4i-T4o s400 d217
+T3o-J2 s500 d287 -150 juncbuf
+J2-T4i s500 d538 -36 sensor-axle
+    -40 decel
+T4i-T4o s300 d217
     +50 align
-T4o-S/F s700 d306
+T4o-S/F s500 d306
