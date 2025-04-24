@@ -108,6 +108,8 @@ def linetrack(min_distance: int | float, speed: int | float, *, direction: str =
     junction_distance = -junction_size
     distance_indicator = False
     junction_indicator = False
+    ran_off = False
+    off_distance = 0
     hub.display.pixel(0, 0, 0)
     hub.display.pixel(0, 1, 0)
     pid_controller = PID(50, 0, 2000)
@@ -162,8 +164,14 @@ def linetrack(min_distance: int | float, speed: int | float, *, direction: str =
 
         # Turn back to the line if the robot ran off the line
         if sum(line_amounts) < 0.5:
+            if not ran_off:
+                ran_off = True
+                off_distance = db.distance()
             turn_rate = 100
             drive_speed = 100
+        elif ran_off:
+            ran_off = False
+            db.reset(off_distance)
 
         db.drive(drive_speed, turn_rate)
 
