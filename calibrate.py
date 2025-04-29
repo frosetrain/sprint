@@ -38,4 +38,7 @@ def read_storage() -> tuple[int, int, int, int]:
 def print_reflections():
     """Continuously print space-separated reflection values."""
     while True:
-        print(" ".join(sensor.reflection() for sensor in color_sensors))
+        print(" ".join(str(sensor.reflection()) for sensor in color_sensors))
+
+
+print(average_reflection())

@@ -6,9 +6,7 @@ from pybricks.pupdevices import ColorSensor, Motor
 from pybricks.robotics import DriveBase
 from pybricks.tools import StopWatch, wait
 from umath import pi, sin
-
-from music.carry_that_weight import BEEPS as CARRY_THAT_WEIGHT
-from music.golden_slumbers import BEEPS as GOLDEN_SLUMBERS
+from usys import version
 
 hub = PrimeHub()
 hub.display.orientation(Side.BOTTOM)
@@ -46,6 +44,7 @@ class PID:
         self.stopwatch.reset()
         self.previous_time = 0
         self.output_count = 0
+        self.ticks = 0
 
     def update(self, error: float) -> float:
         """Get the PID output for a new error value."""
@@ -83,16 +82,18 @@ class PID:
 
         # Output reading
         if stopwatch_time >= self.output_count * 100:
-            print(error, p_term, i_term, d_term)
+            print(self.ticks * 10, error, p_term, i_term, d_term)
             self.output_count += 1
+            self.ticks = 0
+        self.ticks += 1
 
         return p_term + i_term + d_term
 
 
 def process_reflections(reflections: tuple[int, int, int, int]) -> tuple[float, float, float, float]:
     """Convert reflection to line amount."""
-    whites = (67, 62, 60, 64)
-    black = 8
+    whites = (58, 53, 53, 55)
+    black = 7
     out = []
     for white, ref in zip(whites, reflections):
         line_amount = 1 - (ref - black) / (white - black)
@@ -112,7 +113,7 @@ def linetrack(min_distance: int | float, speed: int | float, *, direction: str =
     off_distance = 0
     hub.display.pixel(0, 0, 0)
     hub.display.pixel(0, 1, 0)
-    pid_controller = PID(50, 0, 2000)
+    pid_controller = PID(40, 0, 800)
     db.reset()
 
     while True:
@@ -171,7 +172,7 @@ def linetrack(min_distance: int | float, speed: int | float, *, direction: str =
             drive_speed = 100
         elif ran_off:
             ran_off = False
-            db.reset(off_distance)
+            db.reset(off_distance, 0)
 
         db.drive(drive_speed, turn_rate)
 
@@ -209,6 +210,7 @@ def play_song(notes: list[tuple[int, int]]) -> None:
 
 def main():
     """Main function."""
+    print(version)
     hub.speaker.volume(100)
     notes = c_major_scale()
     hub.display.icon(
@@ -229,9 +231,10 @@ def main():
     strobe_beacon_colors[11] = Color.RED
     hub.light.animate(strobe_beacon_colors, 75)
 
-    # play_song(GOLDEN_SLUMBERS)
-    # play_song(CARRY_THAT_WEIGHT)
     wait(500)
+
+    while True:
+        linetrack(1600, 500)
 
     # Lap 1
     linetrack(533 - 40, 700)  # PS-T1i
