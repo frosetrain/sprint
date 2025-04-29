@@ -24,18 +24,14 @@ db.settings(straight_speed=500, straight_acceleration=2000, turn_rate=130, turn_
 SENSOR_POSITIONS = (-3, -1, 1, 3)
 
 
-class PID:
-    """Proportional-integral-derivative controller for line tracking."""
+class PD:
+    """Proportional-derivative controller for line tracking."""
 
-    def __init__(self, k_p: float, k_i: float, k_d: float):
+    def __init__(self, k_p: float, k_d: float):
         """Init."""
         self.K_P = k_p
-        self.K_I = k_i
         self.K_D = k_d
-        self.INTEGRAL_MAX = self.K_I / 300
-        # self.INTEGRAL_MAX = 1000
         self.DERIVATIVE_WINDOW = 10
-        self.integral = 0
         self.rolling_errors = [0] * self.DERIVATIVE_WINDOW
         self.rolling_times = [0] * self.DERIVATIVE_WINDOW
         self.error_pointer = 0
@@ -50,16 +46,10 @@ class PID:
         """Get the PID output for a new error value."""
         # Update times
         stopwatch_time = self.stopwatch.time()
-        dt = (stopwatch_time - self.previous_time) / 1000
         self.previous_time = stopwatch_time
 
         # Proportional term
         p_term = self.K_P * error
-
-        # Integral term
-        self.integral += error * dt
-        self.integral = max(min(self.integral, self.INTEGRAL_MAX), -self.INTEGRAL_MAX)
-        i_term = self.K_I * self.integral
 
         # Derivative term
         if stopwatch_time - self.rolling_times[self.error_pointer] <= 0:
@@ -82,12 +72,12 @@ class PID:
 
         # Output reading
         if stopwatch_time >= self.output_count * 100:
-            print(self.ticks * 10, error, p_term, i_term, d_term)
+            print(self.ticks * 10, error, p_term, d_term)
             self.output_count += 1
             self.ticks = 0
         self.ticks += 1
 
-        return p_term + i_term + d_term
+        return p_term + d_term
 
 
 def process_reflections(reflections: tuple[int, int, int, int]) -> tuple[float, float, float, float]:
@@ -113,7 +103,7 @@ def linetrack(min_distance: int | float, speed: int | float, *, direction: str =
     off_distance = 0
     hub.display.pixel(0, 0, 0)
     hub.display.pixel(0, 1, 0)
-    pid_controller = PID(40, 0, 800)
+    pid_controller = PD(40, 800)
     db.reset()
 
     while True:
