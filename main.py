@@ -32,48 +32,21 @@ class PD:
         self.K_P = k_p
         self.K_D = k_d
         self.DERIVATIVE_WINDOW = 10
-        self.rolling_errors = [0] * self.DERIVATIVE_WINDOW
-        self.rolling_times = [0] * self.DERIVATIVE_WINDOW
-        self.error_pointer = 0
-        self.rolling_filled = False
-        self.stopwatch = StopWatch()
-        self.stopwatch.reset()
+        self.previous_error = 0
         self.previous_time = 0
-        self.output_count = 0
-        self.ticks = 0
+        self.stopwatch = StopWatch()
 
     def update(self, error: float) -> float:
         """Get the PID output for a new error value."""
-        # Update times
         stopwatch_time = self.stopwatch.time()
+        p_term = self.K_P * error
+        d_term = self.K_D * (error - self.previous_error) / (stopwatch_time - self.previous_time)
+        self.previous_error = error
         self.previous_time = stopwatch_time
 
-        # Proportional term
-        p_term = self.K_P * error
-
-        # Derivative term
-        if stopwatch_time - self.rolling_times[self.error_pointer] <= 0:
-            d_term = 0
-        elif not self.rolling_filled:
-            d_term = 0
-        else:
-            d_term = (
-                self.K_D
-                * (error - self.rolling_errors[self.error_pointer])
-                / (stopwatch_time - self.rolling_times[self.error_pointer])
-            )
-
-        # Update errors
-        self.rolling_errors[self.error_pointer] = error
-        self.rolling_times[self.error_pointer] = stopwatch_time
-        self.error_pointer = (self.error_pointer + 1) % self.DERIVATIVE_WINDOW
-        if not self.rolling_filled and self.error_pointer == 0:
-            self.rolling_filled = True
-
-        # Output reading
-        if stopwatch_time >= self.output_count * 100:
-            print(self.ticks * 10, error, p_term, d_term)
-            self.output_count += 1
+        # Output readings
+        if self.ticks >= 100:
+            print(stopwatch_time, error, p_term, d_term)
             self.ticks = 0
         self.ticks += 1
 
