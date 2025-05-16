@@ -27,14 +27,16 @@ SENSOR_POSITIONS = (-3, -1, 1, 3)
 class PD:
     """Proportional-derivative controller for line tracking."""
 
+    # TODO: re-add window?
+
     def __init__(self, k_p: float, k_d: float):
         """Init."""
         self.K_P = k_p
         self.K_D = k_d
-        self.DERIVATIVE_WINDOW = 10
         self.previous_error = 0
         self.previous_time = 0
         self.stopwatch = StopWatch()
+        self.ticks = 0
 
     def update(self, error: float) -> float:
         """Get the PID output for a new error value."""
@@ -55,8 +57,8 @@ class PD:
 
 def process_reflections(reflections: tuple[int, int, int, int]) -> tuple[float, float, float, float]:
     """Convert reflection to line amount."""
-    whites = (58, 53, 53, 55)
-    black = 7
+    whites = (85, 82, 81, 81)
+    black = 9
     out = []
     for white, ref in zip(whites, reflections):
         line_amount = 1 - (ref - black) / (white - black)
@@ -76,7 +78,7 @@ def linetrack(min_distance: int | float, speed: int | float, *, direction: str =
     off_distance = 0
     hub.display.pixel(0, 0, 0)
     hub.display.pixel(0, 1, 0)
-    pid_controller = PD(40, 800)
+    pid_controller = PD(40, 1000)  # FIXME: ...
     db.reset()
 
     while True:
@@ -125,9 +127,11 @@ def linetrack(min_distance: int | float, speed: int | float, *, direction: str =
         sined_error = 3 * sin(linear_error * pi / 6)
         turn_rate = pid_controller.update(sined_error)
         drive_speed = speed
+        if abs(sined_error) > 1:
+            drive_speed = speed - speed * ((abs(sined_error) - 1) / 3)
 
         # Turn back to the line if the robot ran off the line
-        if sum(line_amounts) < 0.5:
+        if sum(line_amounts) < 0.5 and False:  # FIXME: ...
             if not ran_off:
                 ran_off = True
                 off_distance = db.distance()
@@ -171,7 +175,7 @@ def play_song(notes: list[tuple[int, int]]) -> None:
             wait(duration)
 
 
-def main():
+def main() -> None:
     """Main function."""
     print(version)
     hub.speaker.volume(100)
@@ -196,34 +200,34 @@ def main():
 
     wait(500)
 
-    while True:
-        linetrack(1600, 500)
+    while False:
+        linetrack(1600, 250)
 
-    # Lap 1
-    linetrack(533 - 40, 700)  # PS-T1i
-    hub.speaker.beep(next(notes), 50)
-    linetrack(213 + 40 + 50 - 80, 400)  # HACK: T1i-T1o
-    hub.speaker.beep(next(notes), 50)
-    linetrack(482 - 50 - 23, 700)  # T1o-T2i
-    hub.speaker.beep(next(notes), 50)
-    linetrack(123 + 23, 500)  # T2i-T2o
-    hub.speaker.beep(next(notes), 50)
-    linetrack(323 - 150, 700, direction="both")  # T2o-J1
-    hub.speaker.beep(next(notes), 50)
-    turn_right()
-    linetrack(397 - 36 - 40, 700)  # J1-T3i
-    hub.speaker.beep(next(notes), 50)
-    linetrack(0 + 40 + 50, 400)  # T3i-T3o
-    hub.speaker.beep(next(notes), 50)
-    # linetrack(287 - 150 - 50, 700, direction="both")  # T3o-J2
-    hub.speaker.beep(next(notes), 50)
-    turn_right()
-    linetrack(538 - 36 - 40, 700)  # J2-T4i
-    hub.speaker.beep(next(notes), 50)
-    linetrack(217 + 40 + 50, 400)  # T4i-T4o
-    hub.speaker.beep(next(notes), 50)
-    linetrack(306 - 50, 700)  # T4o-S/F
-    db.stop()
+    # Keep doing lap 1
+    while True:
+        linetrack(533 - 40, 700)  # PS-T1i
+        hub.speaker.beep(next(notes), 50)
+        linetrack(213 + 40 + 50 - 80, 400)  # HACK: T1i-T1o
+        hub.speaker.beep(next(notes), 50)
+        linetrack(482 - 50 - 23, 700)  # T1o-T2i
+        hub.speaker.beep(next(notes), 50)
+        linetrack(123 + 23, 500)  # T2i-T2o
+        hub.speaker.beep(next(notes), 50)
+        linetrack(323 - 150, 700, direction="both")  # T2o-J1
+        hub.speaker.beep(next(notes), 50)
+        turn_right()
+        linetrack(397 - 36 - 40, 700)  # J1-T3i
+        hub.speaker.beep(next(notes), 50)
+        linetrack(0 + 40 + 50, 200)  # T3i-T3o
+        hub.speaker.beep(next(notes), 50)
+        linetrack(0, 700, direction="both")  # FIXME: T3o-J2
+        hub.speaker.beep(next(notes), 50)
+        turn_right()
+        linetrack(538 - 36 - 40, 700)  # J2-T4i
+        hub.speaker.beep(next(notes), 50)
+        linetrack(217, 400)  # FIXME: T4i-T4o
+        hub.speaker.beep(next(notes), 50)
+        # linetrack(306 - 50, 700)  # T4o-S/F
 
 
 if __name__ == "__main__":
