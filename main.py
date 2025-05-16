@@ -19,7 +19,7 @@ color_sensors = (
     ColorSensor(Port.C),
 )
 db = DriveBase(left_motor, right_motor, 62.4, 160)
-db.settings(straight_speed=500, straight_acceleration=2000, turn_rate=130, turn_acceleration=585)
+db.settings(straight_speed=500, straight_acceleration=3000, turn_rate=350, turn_acceleration=3000)
 
 SENSOR_POSITIONS = (-3, -1, 1, 3)
 
@@ -27,30 +27,51 @@ SENSOR_POSITIONS = (-3, -1, 1, 3)
 class PD:
     """Proportional-derivative controller for line tracking."""
 
-    # TODO: re-add window?
-
     def __init__(self, k_p: float, k_d: float):
         """Init."""
         self.K_P = k_p
         self.K_D = k_d
-        self.previous_error = 0
-        self.previous_time = 0
+        self.DERIVATIVE_WINDOW = 10
+        self.rolling_errors = [0] * self.DERIVATIVE_WINDOW
+        self.rolling_times = [0] * self.DERIVATIVE_WINDOW
+        self.error_pointer = 0
+        self.rolling_filled = False
         self.stopwatch = StopWatch()
         self.ticks = 0
 
     def update(self, error: float) -> float:
         """Get the PID output for a new error value."""
-        stopwatch_time = self.stopwatch.time()
+        # stopwatch_time = self.stopwatch.time()
+
+        # Proportional term
         p_term = self.K_P * error
-        d_term = self.K_D * (error - self.previous_error) / (stopwatch_time - self.previous_time)
-        self.previous_error = error
-        self.previous_time = stopwatch_time
+
+        # # Derivative term
+        # if stopwatch_time - self.rolling_times[self.error_pointer] <= 0:
+        #     d_term = 0
+        # elif not self.rolling_filled:
+        #     d_term = 0
+        # else:
+        #     d_term = (
+        #         self.K_D
+        #         * (error - self.rolling_errors[self.error_pointer])
+        #         / (stopwatch_time - self.rolling_times[self.error_pointer])
+        #     )
+
+        # Update errors
+        # self.rolling_errors[self.error_pointer] = error
+        # self.rolling_times[self.error_pointer] = stopwatch_time
+        # self.error_pointer = (self.error_pointer + 1) % self.DERIVATIVE_WINDOW
+        # if not self.rolling_filled and self.error_pointer == 0:
+        #     self.rolling_filled = True
 
         # Output readings
-        if self.ticks >= 100:
-            print(stopwatch_time, error, p_term, d_term)
-            self.ticks = 0
-        self.ticks += 1
+        # if self.ticks >= 100:
+        #     print(stopwatch_time, error, p_term, d_term)
+        #     self.ticks = 0
+        # self.ticks += 1
+
+        d_term = 0
 
         return p_term + d_term
 
@@ -78,7 +99,7 @@ def linetrack(min_distance: int | float, speed: int | float, *, direction: str =
     off_distance = 0
     hub.display.pixel(0, 0, 0)
     hub.display.pixel(0, 1, 0)
-    pid_controller = PD(40, 1000)  # FIXME: ...
+    pid_controller = PD(40, 0)  # FIXME: ...
     db.reset()
 
     while True:
@@ -200,8 +221,8 @@ def main() -> None:
 
     wait(500)
 
-    while False:
-        linetrack(1600, 250)
+    while True:
+        linetrack(1600, 500)
 
     # Keep doing lap 1
     while True:
