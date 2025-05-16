@@ -41,37 +41,35 @@ class PD:
 
     def update(self, error: float) -> float:
         """Get the PID output for a new error value."""
-        # stopwatch_time = self.stopwatch.time()
+        stopwatch_time = self.stopwatch.time()
 
         # Proportional term
         p_term = self.K_P * error
 
-        # # Derivative term
-        # if stopwatch_time - self.rolling_times[self.error_pointer] <= 0:
-        #     d_term = 0
-        # elif not self.rolling_filled:
-        #     d_term = 0
-        # else:
-        #     d_term = (
-        #         self.K_D
-        #         * (error - self.rolling_errors[self.error_pointer])
-        #         / (stopwatch_time - self.rolling_times[self.error_pointer])
-        #     )
+        # Derivative term
+        if stopwatch_time - self.rolling_times[self.error_pointer] <= 0:
+            d_term = 0
+        elif not self.rolling_filled:
+            d_term = 0
+        else:
+            d_term = (
+                self.K_D
+                * (error - self.rolling_errors[self.error_pointer])
+                / (stopwatch_time - self.rolling_times[self.error_pointer])
+            )
 
         # Update errors
-        # self.rolling_errors[self.error_pointer] = error
-        # self.rolling_times[self.error_pointer] = stopwatch_time
-        # self.error_pointer = (self.error_pointer + 1) % self.DERIVATIVE_WINDOW
-        # if not self.rolling_filled and self.error_pointer == 0:
-        #     self.rolling_filled = True
+        self.rolling_errors[self.error_pointer] = error
+        self.rolling_times[self.error_pointer] = stopwatch_time
+        self.error_pointer = (self.error_pointer + 1) % self.DERIVATIVE_WINDOW
+        if not self.rolling_filled and self.error_pointer == 0:
+            self.rolling_filled = True
 
         # Output readings
-        # if self.ticks >= 100:
-        #     print(stopwatch_time, error, p_term, d_term)
-        #     self.ticks = 0
-        # self.ticks += 1
-
-        d_term = 0
+        if self.ticks >= 100:
+            print(stopwatch_time, error, p_term, d_term)
+            self.ticks = 0
+        self.ticks += 1
 
         return p_term + d_term
 
