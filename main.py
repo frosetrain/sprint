@@ -222,21 +222,18 @@ def main() -> None:
 
     # Keep doing lap 1
     while True:
-        linetrack(533 - 80, 530)  # FIXME: PS-T1i
-        linetrack(213 + 100, 300)  # HACK: T1i-T1o
-        linetrack(482 - 100 - 80, 530)  # T1o-T2i
-        # db.brake()
-        # bye
-        linetrack(123 + 23 + 80, 300)  # T2i-T2o
-        linetrack(323 - 150, 530, direction="both")  # T2o-J1
+        linetrack(453, 530)  # PS-T1i
+        linetrack(313, 300)  # HACK: T1i-T1o
+        linetrack(302, 530)  # T1o-T2i
+        linetrack(226, 300)  # T2i-T2o
+        linetrack(173, 530, direction="both")  # T2o-J1
         turn_right()
-        linetrack(397 - 36 - 40 - 200, 530)  # J1-T3i
-        linetrack(0 + 40 + 50 + 200, 250, intercept_direction="left")  # FIXME: T3i-T3o
-        linetrack(0, 530, direction="both", intercept_direction="left")  # FIXME: T3o-J2
+        linetrack(121, 530)  # J1-T3i
+        linetrack(290, 250, intercept_direction="left")  # T3i-T3o
+        linetrack(0, 530, direction="both", intercept_direction="left")  # T3o-J2
         turn_right()
-        linetrack(538 - 36 - 40 - 100, 530)  # J2-T4i
-        linetrack(217 + 50, 300)  # FIXME: T4i-T4o
-        # linetrack(306 - 50, 700)  # T4o-S/F
+        linetrack(362, 530)  # J2-T4i
+        linetrack(267, 300)  # T4i-T4o
 
 
 if __name__ == "__main__":
