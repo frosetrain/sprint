@@ -88,7 +88,7 @@ def linetrack(
     junctions_crossed = 0
     junction_size = 20
     junction_distance = -junction_size
-    pid_controller = PIController(50, 1)  # FIXME: ...
+    pid_controller = PIController(57, 1)  # FIXME: ...
     db.reset()
 
     intercept = False
@@ -126,8 +126,8 @@ def linetrack(
         turn_rate = pid_controller.update(sined_error)
         drive_speed = speed
 
-        if abs(sined_error) > 1:
-            drive_speed = speed - speed * ((abs(sined_error) - 1) / 3)
+        if abs(sined_error) > 1.5:
+            drive_speed = speed - speed * ((abs(sined_error) - 1.5) / 2)
             if not slow:
                 slow = True
                 # print("slowing")
@@ -139,17 +139,18 @@ def linetrack(
 
         # Turn back to the line if the robot ran off the line
         if sum(line_amounts) < 0.5:
-            turn_rate = 100 if intercept_direction == "right" else -100
-            drive_speed = 50
             intercept = True
             # print("intercepting")
             hub.display.pixel(0, 2, 100)
-        elif intercept and sum(line_amounts) >= 0.5:
+        elif intercept and abs(sined_error) < 1 and sum(line_amounts) > 1:
             intercept = False
             # print("intercepted")
             hub.display.pixel(0, 2, 0)
+        if intercept:
+            turn_rate = 100 if intercept_direction == "right" else -100
+            drive_speed = 100
 
-        print(drive_speed)
+        # print(drive_speed)
 
         db.drive(drive_speed, turn_rate)
 
@@ -211,24 +212,30 @@ def main() -> None:
     wait(500)
 
     while False:
-        linetrack(1600, 530)
+        db.drive(100, 100)
+        line_amounts = process_reflections(tuple(sensor.reflection() for sensor in color_sensors))
+        linear_error = sum(reflection * position for reflection, position in zip(line_amounts, SENSOR_POSITIONS))
+        sined_error = 3 * sin(linear_error * pi / 6)
+        if abs(sined_error) < 1 and sum(line_amounts) > 1:
+            db.brake()
+            bye
 
     # Keep doing lap 1
     while True:
         linetrack(533 - 80, 530)  # FIXME: PS-T1i
         linetrack(213 + 100, 300)  # HACK: T1i-T1o
-        linetrack(482 - 100, 530)  # T1o-T2i
-        linetrack(123 + 23, 300)  # T2i-T2o
+        linetrack(482 - 100 - 80, 530)  # T1o-T2i
+        # db.brake()
+        # bye
+        linetrack(123 + 23 + 80, 300)  # T2i-T2o
         linetrack(323 - 150, 530, direction="both")  # T2o-J1
-        db.brake()
-        bye
         turn_right()
-        linetrack(397 - 36 - 40 - 200, 700)  # J1-T3i
-        linetrack(0 + 40 + 50 + 200, 150)  # FIXME: T3i-T3o
-        linetrack(0, 700, direction="both")  # FIXME: T3o-J2
+        linetrack(397 - 36 - 40 - 200, 530)  # J1-T3i
+        linetrack(0 + 40 + 50 + 200, 250, intercept_direction="left")  # FIXME: T3i-T3o
+        linetrack(0, 530, direction="both", intercept_direction="left")  # FIXME: T3o-J2
         turn_right()
-        linetrack(538 - 36 - 40, 700)  # J2-T4i
-        linetrack(217, 400)  # FIXME: T4i-T4o
+        linetrack(538 - 36 - 40 - 100, 530)  # J2-T4i
+        linetrack(217 + 50, 300)  # FIXME: T4i-T4o
         # linetrack(306 - 50, 700)  # T4o-S/F
 
 
