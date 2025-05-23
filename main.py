@@ -24,46 +24,6 @@ db.settings(straight_speed=530, straight_acceleration=3000, turn_rate=250, turn_
 SENSOR_POSITIONS = (-3, -1, 1, 3)
 
 
-class PIController:
-    """Proportional-integral controller for line tracking."""
-
-    def __init__(self, k_p: float, k_i: float):
-        """Init."""
-        self.K_P = k_p
-        self.K_I = k_i
-        self.integral = 0
-        self.integral_max = 100
-        self.stopwatch = StopWatch()
-        self.ticks = 0
-        self.error_positive = True
-
-    def update(self, error: float) -> float:
-        """Get the PID output for a new error value."""
-        # Proportional term
-        p_term = self.K_P * error
-
-        # Integral term
-        # self.integral += error
-        # self.integral = max(min(self.integral, self.integral_max), -self.integral_max)
-        # if self.error_positive and error < 0:
-        #     self.integral = 0
-        #     self.error_positive = False
-        # elif not self.error_positive and error > 0:
-        #     self.integral = 0
-        #     self.error_positive = True
-        # i_term = self.K_I * self.integral
-
-        i_term = 0
-
-        # Output readings
-        # if self.ticks >= 100:
-        # print(error, p_term, i_term)
-        # self.ticks = 0
-        # self.ticks += 1
-
-        return p_term + i_term
-
-
 def process_reflections(reflections: tuple[int, int, int, int]) -> tuple[float, float, float, float]:
     """Convert reflection to line amount."""
     whites = (85, 82, 81, 81)
@@ -88,7 +48,6 @@ def linetrack(
     junctions_crossed = 0
     junction_size = 20
     junction_distance = -junction_size
-    pid_controller = PIController(50, 1)  # FIXME: ...
     db.reset()
     hub.display.pixel(0, 0, 0)
 
@@ -126,7 +85,7 @@ def linetrack(
 
         linear_error = sum(reflection * position for reflection, position in zip(line_amounts, SENSOR_POSITIONS))
         sined_error = 3 * sin(linear_error * pi / 6)
-        turn_rate = pid_controller.update(sined_error)
+        turn_rate = sined_error * 50
         drive_speed = speed
 
         # Reduce speed if the robot is too far from the line
