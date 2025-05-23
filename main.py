@@ -19,7 +19,7 @@ color_sensors = (
     ColorSensor(Port.C),
 )
 db = DriveBase(left_motor, right_motor, 62.4, 160)
-db.settings(straight_speed=500, straight_acceleration=3000, turn_rate=350, turn_acceleration=800)  # max turn acceleration 3000
+db.settings(straight_speed=530, straight_acceleration=3000, turn_rate=250, turn_acceleration=750)  # max turn acceleration 3000
 
 SENSOR_POSITIONS = (-3, -1, 1, 3)
 
@@ -88,8 +88,9 @@ def linetrack(
     junctions_crossed = 0
     junction_size = 20
     junction_distance = -junction_size
-    pid_controller = PIController(57, 1)  # FIXME: ...
+    pid_controller = PIController(50, 1)  # FIXME: ...
     db.reset()
+    hub.display.pixel(0, 0, 0)
 
     intercept = False
     slow = False
@@ -108,6 +109,8 @@ def linetrack(
             junction_reached = line_amounts[3] > 0.8 and line_amounts[2] > 0.5
         elif direction == "none":
             junction_reached = True
+        elif direction == "white":
+            junction_reached = sum(line_amounts) < 0.2
         else:
             raise ValueError("Invalid direction")
 
@@ -115,7 +118,7 @@ def linetrack(
         if junction_reached and distance_reached and not skipping_junction:
             junctions_crossed += 1
             if junctions_crossed >= junctions:
-                if direction != "none":
+                if direction not in ("none", "white"):
                     db.straight(36)
                 return  # End line tracking
             else:
@@ -126,25 +129,22 @@ def linetrack(
         turn_rate = pid_controller.update(sined_error)
         drive_speed = speed
 
+        # Reduce speed if the robot is too far from the line
         if abs(sined_error) > 1.5:
             drive_speed = speed - speed * ((abs(sined_error) - 1.5) / 2)
             if not slow:
                 slow = True
-                # print("slowing")
                 hub.display.pixel(0, 0, 100)
         if slow and abs(sined_error) <= 1:
             slow = False
-            # print("unslowing")
             hub.display.pixel(0, 0, 0)
 
         # Turn back to the line if the robot ran off the line
-        if sum(line_amounts) < 0.5:
+        if sum(line_amounts) < 0.2 and not intercept and direction != "white":
             intercept = True
-            # print("intercepting")
             hub.display.pixel(0, 2, 100)
-        elif intercept and abs(sined_error) < 1 and sum(line_amounts) > 1:
+        elif intercept and abs(sined_error) < 1.5 and sum(line_amounts) > 0.8:
             intercept = False
-            # print("intercepted")
             hub.display.pixel(0, 2, 0)
         if intercept:
             turn_rate = 100 if intercept_direction == "right" else -100
@@ -186,6 +186,36 @@ def play_song(notes: list[tuple[int, int]]) -> None:
             wait(duration)
 
 
+def lap_1() -> None:
+    """Lap 1 (the given path)."""
+    linetrack(453, 530)  # PS-T1i
+    linetrack(313, 300)  # T1i-T1o
+    linetrack(302, 530)  # T1o-T2i
+    linetrack(276, 250)  # T2i-T2o
+    linetrack(123, 530, direction="both")  # T2o-J1
+    turn_right()  # J1
+    linetrack(121, 530)  # J1-T3i
+    linetrack(290, 250, intercept_direction="left")  # T3i-T3o
+    linetrack(0, 530, direction="both", intercept_direction="left")  # T3o-J2
+    turn_right()  # J2
+    linetrack(362, 530)  # J2-T4i
+    linetrack(267, 300)  # T4i-T4o
+
+
+def lap_2() -> None:
+    """Lap 2."""
+    linetrack(453, 530)  # PS-T1i
+    linetrack(313, 300)  # T1i-T1o
+    linetrack(302, 530)  # T1o-T2i
+    linetrack(276, 250)  # T2i-T2o
+    linetrack(123, 400, junctions=2, direction="both")  # T2o-J1-J3
+    turn_left()  # J3
+    linetrack(670, 300)  # J3-T5o
+    linetrack(300, 150, direction="white")  # T5o-T6o
+    db.turn(35)
+    db.straight(200)
+
+
 def main() -> None:
     """Main function."""
     print(version)
@@ -211,29 +241,13 @@ def main() -> None:
 
     wait(500)
 
-    while False:
-        db.drive(100, 100)
-        line_amounts = process_reflections(tuple(sensor.reflection() for sensor in color_sensors))
-        linear_error = sum(reflection * position for reflection, position in zip(line_amounts, SENSOR_POSITIONS))
-        sined_error = 3 * sin(linear_error * pi / 6)
-        if abs(sined_error) < 1 and sum(line_amounts) > 1:
-            db.brake()
-            bye
-
     # Keep doing lap 1
-    while True:
-        linetrack(453, 530)  # PS-T1i
-        linetrack(313, 300)  # HACK: T1i-T1o
-        linetrack(302, 530)  # T1o-T2i
-        linetrack(226, 300)  # T2i-T2o
-        linetrack(173, 530, direction="both")  # T2o-J1
-        turn_right()
-        linetrack(121, 530)  # J1-T3i
-        linetrack(290, 250, intercept_direction="left")  # T3i-T3o
-        linetrack(0, 530, direction="both", intercept_direction="left")  # T3o-J2
-        turn_right()
-        linetrack(362, 530)  # J2-T4i
-        linetrack(267, 300)  # T4i-T4o
+    # while True:
+    # lap_1()
+
+    lap_2()
+
+    # To test distances: Make robot stop after each linetrack
 
 
 if __name__ == "__main__":
