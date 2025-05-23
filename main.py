@@ -40,9 +40,11 @@ def linetrack(
     min_distance: int | float,
     speed: int | float,
     *,
-    direction: str = "none",
+    stop_condition: str = "none",
     junctions: int = 1,
     intercept_direction: str = "right",
+    slow_error: bool = True,
+    both_threshold: int = 3,
 ) -> None:
     """Line track using PID."""
     junctions_crossed = 0
@@ -60,24 +62,24 @@ def linetrack(
         # Detect junction
         distance_reached = db.distance() > min_distance
         skipping_junction = junction_distance <= db.distance() < junction_distance + junction_size
-        if direction == "both":
-            junction_reached = sum(line_amounts) > 3
-        elif direction == "left":
+        if stop_condition == "both":
+            junction_reached = sum(line_amounts) > both_threshold
+        elif stop_condition == "left":
             junction_reached = line_amounts[0] > 0.8 and line_amounts[1] > 0.5
-        elif direction == "right":
+        elif stop_condition == "right":
             junction_reached = line_amounts[3] > 0.8 and line_amounts[2] > 0.5
-        elif direction == "none":
+        elif stop_condition == "none":
             junction_reached = True
-        elif direction == "white":
+        elif stop_condition == "white":
             junction_reached = sum(line_amounts) < 0.2
         else:
-            raise ValueError("Invalid direction")
+            raise ValueError("Invalid stop_condition")
 
         # Return if all conditions met, otherwise update junction state
         if junction_reached and distance_reached and not skipping_junction:
             junctions_crossed += 1
             if junctions_crossed >= junctions:
-                if direction not in ("none", "white"):
+                if stop_condition not in ("none", "white"):
                     db.straight(36)
                 return  # End line tracking
             else:
@@ -89,7 +91,7 @@ def linetrack(
         drive_speed = speed
 
         # Reduce speed if the robot is too far from the line
-        if abs(sined_error) > 1.5:
+        if slow_error and abs(sined_error) > 1.5:
             drive_speed = speed - speed * ((abs(sined_error) - 1.5) / 2)
             if not slow:
                 slow = True
@@ -99,7 +101,7 @@ def linetrack(
             hub.display.pixel(0, 0, 0)
 
         # Turn back to the line if the robot ran off the line
-        if sum(line_amounts) < 0.2 and not intercept and direction != "white":
+        if sum(line_amounts) < 0.2 and not intercept and stop_condition != "white":
             intercept = True
             hub.display.pixel(0, 2, 100)
         elif intercept and abs(sined_error) < 1.5 and sum(line_amounts) > 0.8:
@@ -149,13 +151,13 @@ def lap_1() -> None:
     """Lap 1 (the given path)."""
     linetrack(453, 530)  # PS-T1i
     linetrack(313, 300)  # T1i-T1o
-    linetrack(302, 530)  # T1o-T2i
+    linetrack(332, 530)  # T1o-T2i
     linetrack(276, 250)  # T2i-T2o
-    linetrack(123, 530, direction="both")  # T2o-J1
+    linetrack(123, 530, stop_condition="both")  # T2o-J1
     turn_right()  # J1
     linetrack(121, 530)  # J1-T3i
     linetrack(290, 250, intercept_direction="left")  # T3i-T3o
-    linetrack(0, 530, direction="both", intercept_direction="left")  # T3o-J2
+    linetrack(0, 530, stop_condition="both", intercept_direction="left")  # T3o-J2
     turn_right()  # J2
     linetrack(362, 530)  # J2-T4i
     linetrack(267, 300)  # T4i-T4o
@@ -165,14 +167,74 @@ def lap_2() -> None:
     """Lap 2."""
     linetrack(453, 530)  # PS-T1i
     linetrack(313, 300)  # T1i-T1o
-    linetrack(302, 530)  # T1o-T2i
+    linetrack(332, 530)  # T1o-T2i
     linetrack(276, 250)  # T2i-T2o
-    linetrack(123, 400, junctions=2, direction="both")  # T2o-J1-J3
+    linetrack(123, 400, junctions=2, stop_condition="both")  # T2o-J1-J3
     turn_left()  # J3
     linetrack(670, 300)  # J3-T5o
-    linetrack(300, 150, direction="white")  # T5o-T6o
-    db.turn(35)
-    db.straight(200)
+    linetrack(300, 150, stop_condition="white")  # T5o-T6o
+    db.turn(33)
+    db.straight(450)
+    linetrack(300, 150)  # T7i-T7o
+    linetrack(200, 250)
+    linetrack(1380, 530, slow_error=False)  # T7o-T4i
+    linetrack(267, 300)  # T4i-T4o
+
+
+def lap_3() -> None:
+    """Lap 3."""
+    linetrack(453, 530)  # PS-T1i
+    linetrack(313, 300)  # T1i-T1o
+    linetrack(332, 530)  # T1o-T2i
+    linetrack(276, 250)  # T2i-T2o
+    linetrack(123, 400, junctions=2, stop_condition="both")  # T2o-J1-J3
+    turn_right()  # J3
+    linetrack(200, 400, stop_condition="both", both_threshold=2)  # J3-J4
+    db.curve(80, 75)  # J4
+    linetrack(100, 250, stop_condition="right")  # J4-J2
+    turn_right()  # J2
+    linetrack(290, 250)  # J2-T3o
+    linetrack(121, 530, stop_condition="both")  # T3o-J1
+    turn_right()  # J1
+    linetrack(150, 530, stop_condition="both")  # J1-J3
+    turn_left()  # J3
+    linetrack(670, 300)  # J3-T5o
+    linetrack(300, 150, stop_condition="white")  # T5o-T6o
+    db.turn(33)
+    db.straight(450)
+    linetrack(300, 150)  # T7i-T7o
+    linetrack(200, 250)
+    linetrack(1380, 530, slow_error=False)  # T7o-T4i
+    linetrack(267, 300)  # T4i-T4o
+
+
+def lap_4() -> None:
+    """Lap 4."""
+    linetrack(453, 530)  # PS-T1i
+    linetrack(313, 300)  # T1i-T1o
+    linetrack(332, 530)  # T1o-T2i
+    linetrack(276, 250)  # T2i-T2o
+    linetrack(123, 530, stop_condition="both")  # T2o-J1
+    turn_right()  # J1
+    linetrack(121, 530)  # J1-T3i
+    linetrack(290, 250, intercept_direction="left")  # T3i-T3o
+    linetrack(0, 530, stop_condition="both", intercept_direction="left")  # T3o-J2
+    turn_left()  # J2
+
+    linetrack(100, 250)  # J2-T7i
+    linetrack(800, 530)
+    linetrack(300, 150, stop_condition="white")  # T7i-T7o
+    # db.turn(33)
+    db.straight(450)
+    linetrack(300, 150)
+    linetrack(270, 300)
+    linetrack(100, 200)
+    linetrack(300, 300)
+    linetrack(300, 400, stop_condition="both", both_threshold=2)
+    db.curve(80, 75)  # J4
+    linetrack(100, 250)
+    linetrack(550, 530)
+    linetrack(267, 300)  # T4i-T4o
 
 
 def main() -> None:
@@ -200,11 +262,11 @@ def main() -> None:
 
     wait(500)
 
-    # Keep doing lap 1
-    # while True:
-    # lap_1()
-
-    lap_2()
+    while True:
+        lap_1()
+        lap_2()
+        lap_3()
+        lap_4()
 
     # To test distances: Make robot stop after each linetrack
 
