@@ -190,7 +190,7 @@ def lap_3() -> None:
     linetrack(123, 400, junctions=2, stop_condition="both")  # T2o-J1-J3
     turn_right()  # J3
     linetrack(200, 400, stop_condition="both", both_threshold=2)  # J3-J4
-    db.curve(80, 75)  # J4
+    db.curve(116, 75)  # J4
     linetrack(100, 250, stop_condition="right")  # J4-J2
     turn_right()  # J2
     linetrack(290, 250)  # J2-T3o
@@ -231,7 +231,7 @@ def lap_4() -> None:
     linetrack(100, 200)
     linetrack(300, 300)
     linetrack(300, 400, stop_condition="both", both_threshold=2)
-    db.curve(80, 75)  # J4
+    db.curve(116, 75)  # J4
     linetrack(100, 250)
     linetrack(550, 530)
     linetrack(267, 300)  # T4i-T4o
