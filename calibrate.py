@@ -3,6 +3,7 @@
 from pybricks.hubs import PrimeHub
 from pybricks.parameters import Port
 from pybricks.pupdevices import ColorSensor
+from pybricks.tools import wait
 from ustruct import calcsize, pack_into, unpack_from
 
 hub = PrimeHub()
@@ -41,4 +42,8 @@ def print_reflections():
         print(" ".join(str(sensor.reflection()) for sensor in color_sensors))
 
 
+print(average_reflection())
+hub.speaker.beep()
+wait(5000)
+hub.speaker.beep()
 print(average_reflection())

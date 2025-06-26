@@ -4,7 +4,7 @@ from pybricks.hubs import PrimeHub
 from pybricks.parameters import Color, Direction, Port, Side
 from pybricks.pupdevices import ColorSensor, Motor
 from pybricks.robotics import DriveBase
-from pybricks.tools import StopWatch, wait
+from pybricks.tools import wait
 from umath import pi, sin
 from usys import version
 
@@ -26,8 +26,8 @@ SENSOR_POSITIONS = (-3, -1, 1, 3)
 
 def process_reflections(reflections: tuple[int, int, int, int]) -> tuple[float, float, float, float]:
     """Convert reflection to line amount."""
-    whites = (85, 82, 81, 81)
-    black = 9
+    whites = (85, 76, 76, 75)
+    black = 21
     out = []
     for white, ref in zip(whites, reflections):
         line_amount = 1 - (ref - black) / (white - black)
@@ -44,7 +44,8 @@ def linetrack(
     junctions: int = 1,
     intercept_direction: str = "right",
     slow_error: bool = True,
-    both_threshold: int = 3,
+    both_threshold: int = 2.5,
+    go_forward: bool = True,
 ) -> None:
     """Line track using PID."""
     junctions_crossed = 0
@@ -79,7 +80,7 @@ def linetrack(
         if junction_reached and distance_reached and not skipping_junction:
             junctions_crossed += 1
             if junctions_crossed >= junctions:
-                if stop_condition not in ("none", "white"):
+                if stop_condition not in ("none", "white") and go_forward:
                     db.straight(36)
                 return  # End line tracking
             else:
@@ -153,13 +154,39 @@ def lap_1() -> None:
     linetrack(313, 300)  # T1i-T1o
     linetrack(332, 530)  # T1o-T2i
     linetrack(276, 250)  # T2i-T2o
-    linetrack(123, 530, stop_condition="both")  # T2o-J1
+    linetrack(250, 530, stop_condition="both")  # T2o-J1
     turn_right()  # J1
     linetrack(121, 530)  # J1-T3i
     linetrack(290, 250, intercept_direction="left")  # T3i-T3o
     linetrack(0, 530, stop_condition="both", intercept_direction="left")  # T3o-J2
     turn_right()  # J2
     linetrack(362, 530)  # J2-T4i
+    linetrack(267, 300)  # T4i-T4o
+
+
+def real_lap_2() -> None:
+    """Real lap 2."""
+    linetrack(453, 530)  # PS-T1i
+    linetrack(313, 300)  # T1i-T1o
+    linetrack(332, 530)  # T1o-T2i
+    linetrack(276, 250)  # T2i-T2o
+    linetrack(250, 400, junctions=2, stop_condition="both")  # T2o-J1-J3
+    turn_right()  # J3
+    linetrack(150, 400, stop_condition="both", both_threshold=2, go_forward=False)  # J3-J4
+    db.curve(80, -100)  # J4
+
+    linetrack(100, 250)  # J4-
+    linetrack(500, 530)  # -T71
+    linetrack(200, 150)  # T7i-T7o
+    linetrack(500, 400)  # T7o-T6i
+    linetrack(200, 150)  # T6i-T6o
+    linetrack(270, 300)
+    linetrack(100, 200)
+    linetrack(300, 300)
+    linetrack(300, 400, stop_condition="both", both_threshold=2, go_forward=False)
+    db.curve(85, 69)  # J4
+    linetrack(100, 250)
+    linetrack(550, 530)
     linetrack(267, 300)  # T4i-T4o
 
 
@@ -263,12 +290,10 @@ def main() -> None:
     wait(500)
 
     while True:
+        hub.speaker.beep(440)
         lap_1()
-        lap_2()
-        lap_3()
-        lap_4()
-
-    # To test distances: Make robot stop after each linetrack
+        hub.speaker.beep(494)
+        real_lap_2()
 
 
 if __name__ == "__main__":
